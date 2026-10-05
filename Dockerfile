@@ -1,4 +1,6 @@
-FROM --platform=$BUILDPLATFORM rust:alpine AS builder
+# Build on the target platform: `cargo install` has no --target, so a $BUILDPLATFORM
+# builder would copy a host-arch binary into a foreign-arch image.
+FROM rust:alpine AS builder
 RUN apk add --no-cache musl-dev
 WORKDIR /usr/src/koblas
 COPY . .

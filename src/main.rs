@@ -1,8 +1,10 @@
 mod config;
 mod error;
+mod relay;
 
 use crate::config::Config;
 use crate::error::Error;
+use crate::relay::{relay, Timeouts};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use clap::{Parser, Subcommand};
@@ -12,10 +14,11 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Builder;
-use tokio::{io, net};
 use tracing::{debug, error, error_span, field, info, warn, Instrument, Span};
 
 #[derive(Debug, Parser)]
@@ -30,6 +33,12 @@ struct Cli {
     no_auth: bool,
     #[arg(long, env = "KOBLAS_ANONYMIZATION")]
     anon: bool,
+    /// Seconds a relay may stay silent in both directions before it is closed
+    #[arg(long, env = "KOBLAS_IDLE_TIMEOUT", default_value_t = 300)]
+    idle_timeout: u64,
+    /// Seconds a relay may stay silent after one side has closed before it is closed
+    #[arg(long, env = "KOBLAS_HALF_CLOSE_TIMEOUT", default_value_t = 30)]
+    half_close_timeout: u64,
     #[arg(short, long, env = "KOBLAS_CONFIG_PATH", value_name = "FILE")]
     config: Option<PathBuf>,
     #[command(subcommand)]
@@ -131,11 +140,17 @@ async fn run(cli: Cli, config: Config) -> error::Result<()> {
 
             async {
                 let ip = addr.ip();
-                if clients.load(Ordering::SeqCst) >= cli.limit
-                    || config.is_blacklisted(&ip)
-                    || !config.is_whitelisted(&ip)
-                {
-                    warn!("connection denied");
+                let denied = if clients.load(Ordering::SeqCst) >= cli.limit {
+                    Some("client limit reached")
+                } else if config.is_blacklisted(&ip) {
+                    Some("blacklisted")
+                } else if !config.is_whitelisted(&ip) {
+                    Some("not whitelisted")
+                } else {
+                    None
+                };
+                if let Some(reason) = denied {
+                    error!("connection denied: {reason}");
                     return;
                 }
 
@@ -254,7 +269,11 @@ async fn handle(stream: &mut TcpStream, cli: Arc<Cli>, config: Arc<Config>) -> e
     buf.extend(port);
     stream.write_all(&buf).await?;
 
-    let (sent, received) = io::copy_bidirectional(stream, &mut peer).await?;
+    let timeouts = Timeouts {
+        idle: Duration::from_secs(cli.idle_timeout),
+        half_close: Duration::from_secs(cli.half_close_timeout),
+    };
+    let (sent, received) = relay(stream, &mut peer, timeouts).await?;
     info!("sent {sent} bytes and received {received} bytes");
 
     Ok(())
