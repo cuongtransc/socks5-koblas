@@ -1,0 +1,38 @@
+[tools]
+rust = { version = "1.95", components = "rustfmt,clippy" }
+
+[env]
+IMAGE = "cuongtransc/socks5-koblas"
+IMAGE_TAG = "0.2"
+# The proxies run on amd64 VPS; override for a local arm64 image.
+IMAGE_PLATFORM = "linux/amd64"
+
+[tasks.fmt]
+description = "Rewrite Rust sources with rustfmt"
+run = "cargo fmt"
+
+[tasks."fmt:check"]
+description = "Fail when a Rust source is not rustfmt-formatted"
+run = "cargo fmt --check"
+
+[tasks.lint]
+description = "Clippy with warnings as errors, tests included"
+run = "cargo clippy --all-targets -- -D warnings"
+
+[tasks.test]
+description = "Unit tests (relay timeouts use real localhost sockets)"
+run = "cargo test"
+
+[tasks.ci]
+description = "The gate: format check, clippy and tests"
+depends = ["fmt:check", "lint", "test"]
+run = "echo 'ci passed'"
+
+[tasks.build]
+description = "Build the Docker image $IMAGE:$IMAGE_TAG for the VPS platform"
+run = "docker buildx build --platform \"$IMAGE_PLATFORM\" --load --tag \"$IMAGE:$IMAGE_TAG\" ."
+
+[tasks.release]
+description = "Push $IMAGE:$IMAGE_TAG to the registry"
+depends = ["build"]
+run = "docker push \"$IMAGE:$IMAGE_TAG\""

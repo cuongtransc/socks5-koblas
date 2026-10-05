@@ -118,6 +118,8 @@ Missing keys will fall back to their default value.
 | `KOBLAS_NO_AUTHENTICATION` | Don't require clients to authenticate using a username/password combination | `false`     |
 | `KOBLAS_ANONYMIZATION`     | Exclude sensitive information from the logs                                 | `false`     |
 | `KOBLAS_CONFIG_PATH`       | File path to the config file                                                | `None`      |
+| `KOBLAS_IDLE_TIMEOUT`      | Seconds a relay may stay silent in both directions before it is closed     | `300`       |
+| `KOBLAS_HALF_CLOSE_TIMEOUT`| Seconds a relay may stay silent after one side has closed                   | `30`        |
 
 > :warning: The default configuration requires everyone to connect with a pre-existing username/password combination.
 
@@ -156,6 +158,16 @@ alice = "$argon2id$v=19$m=8,t=2,p=1$bWUwSXl2M2pYNU9xcVBocw$f4gFaE7p0qWRKw"
 bob = "$argon2id$v=19$m=8,t=2,p=1$ZExzaTM3aks1WjU1a3g4UA$J+EiueHYuR/dlA"
 ```
  
+## Development
+
+Tasks run through [mise](https://mise.jdx.dev):
+
+```sh
+mise run ci        # rustfmt check, clippy, tests
+mise run build     # docker image $IMAGE:$IMAGE_TAG (linux/amd64)
+mise run release   # build, then push it
+```
+
 ## License
 
 This project is licensed under either of the following licenses, at your option:
