@@ -1,3 +1,8 @@
 /target/
 **/*.rs.bk
 /.worktrees/
+
+# Local copies of examples/compose config
+/examples/compose/config.toml
+/examples/compose/.env
+.DS_Store

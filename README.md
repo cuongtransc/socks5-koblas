@@ -9,6 +9,17 @@ A lightweight [SOCKS5](https://datatracker.ietf.org/doc/html/rfc1928) proxy serv
 * No Authentication
 * [Username/Password](https://datatracker.ietf.org/doc/html/rfc1929) Authentication
 
+## Quick Start
+
+```bash
+cd examples/compose
+docker run --rm cuongtransc/socks5-koblas:0.2 hash "correct-horse-battery-staple"
+cp config.example.toml config.toml   # paste the hash under [users]
+docker compose up -d
+```
+
+Full steps: [examples/compose/README.md](examples/compose/README.md).
+
 ## Installation
 
 ### Cargo
@@ -78,31 +89,13 @@ docker run -d -p 1080:1080 \
   -v /path/to/config.toml:/etc/koblas/config.toml \
   -e RUST_LOG=debug \
   -e KOBLAS_NO_AUTHENTICATION=false \
-  -e KOBLAS_ANONYMIZE=false \
+  -e KOBLAS_ANONYMIZATION=false \
   --name koblas ynuwenhof/koblas:latest
 ```
 
 this will bind the server to `0.0.0.0:1080`.
 
-Deploy the server with Docker Compose:
-
-```yaml
-version: "3.8"
-services:
-  koblas:
-    image: ynuwenhof/koblas:latest
-    container_name: koblas
-    restart: unless-stopped
-    ports:
-      - 1080:1080
-    environment:
-      RUST_LOG: debug
-      KOBLAS_LIMIT: 256
-      KOBLAS_NO_AUTHENTICATION: false
-      KOBLAS_ANONYMIZATION: true
-    volumes:
-      - /path/to/config.toml:/etc/koblas/config.toml
-```
+Deploy the server with Docker Compose: see [examples/compose](examples/compose/README.md).
 
 ## Configuration
 
