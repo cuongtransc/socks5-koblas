@@ -1,0 +1,23 @@
+# Koblas SOCKS5 proxy. Quick start: README.md next to this file.
+name: koblas
+
+services:
+  koblas:
+    image: ${KOBLAS_IMAGE:-cuongtransc/socks5-koblas:0.2}
+    restart: unless-stopped
+    cpu_shares: 512
+    mem_limit: 100m
+    environment:
+      # RUST_LOG: debug
+      KOBLAS_LIMIT: 256
+      KOBLAS_NO_AUTHENTICATION: "false"
+      KOBLAS_ANONYMIZATION: "true"
+    volumes:
+      - ./config.toml:/etc/koblas/config.toml:ro
+    ports:
+      - "${KOBLAS_HOST_PORT:-1080}:1080"
+    logging:
+      driver: json-file
+      options:
+        max-size: 100m
+        max-file: "3"
