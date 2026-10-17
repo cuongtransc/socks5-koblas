@@ -156,6 +156,7 @@ bob = "$argon2id$v=19$m=8,t=2,p=1$ZExzaTM3aks1WjU1a3g4UA$J+EiueHYuR/dlA"
 Tasks run through [mise](https://mise.jdx.dev):
 
 ```sh
+mise run setup     # once after cloning: pre-commit gate
 mise run ci        # rustfmt check, clippy, tests
 mise run build     # docker image $IMAGE:$IMAGE_TAG (linux/amd64)
 mise run release   # build, then push it
