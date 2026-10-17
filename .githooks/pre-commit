@@ -1,0 +1,5 @@
+#!/bin/sh
+# Gate every commit on `mise run ci`. Installed by `mise run setup`.
+# Git exports GIT_* to hooks; tests that run `git -C <tmp>` would write to this repo.
+for v in $(env | sed -n 's/^\(GIT_[A-Z_]*\)=.*/\1/p'); do unset "$v"; done
+exec mise run ci

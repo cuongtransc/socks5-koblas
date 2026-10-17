@@ -7,6 +7,26 @@ IMAGE_TAG = "0.2"
 # The proxies run on amd64 VPS; override for a local arm64 image.
 IMAGE_PLATFORM = "linux/amd64"
 
+[tasks.setup]
+description = "One command after cloning: wire the pre-commit gate"
+run = """
+# Without a local hooksPath when the global ct-hook-dispatch exists.
+hooks_dir=$(git config --global --get core.hooksPath) || hooks_dir=
+case "$hooks_dir" in
+  "~") hooks_dir=$HOME ;;
+  "~/"*) hooks_dir="$HOME/${hooks_dir#"~/"}" ;;
+esac
+if [ -n "$hooks_dir" ] && [ -x "$hooks_dir/ct-hook-dispatch" ]; then
+  [ "$(git config --local --get core.hooksPath)" = ".githooks" ] && git config --local --unset core.hooksPath
+  echo 'git hooks: global dispatcher runs .githooks'
+else
+  git config core.hooksPath .githooks
+fi
+echo
+echo 'Setup complete. Next:'
+echo '  mise run ci      the gate, also runs on pre-commit'
+"""
+
 [tasks.fmt]
 description = "Rewrite Rust sources with rustfmt"
 run = "cargo fmt"
